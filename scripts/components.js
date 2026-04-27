@@ -16,14 +16,17 @@ export function button({ label, icon = "", variant = "secondary", onClick, title
 }
 
 export function selectControl({ id, label, value, options, onChange }) {
+  const normalizedOptions = options.map((option) => {
+    return typeof option === "string" ? { value: option, label: option } : option;
+  });
   const select = el("select", {
     id,
     className: "input",
     onChange: (event) => onChange?.(event.target.value)
-  }, options.map((option) => el("option", {
-    value: option,
-    text: option,
-    selected: option === value ? "selected" : null
+  }, normalizedOptions.map((option) => el("option", {
+    value: option.value,
+    text: option.label,
+    selected: option.value === value ? "selected" : null
   })));
 
   return el("label", { className: "field" }, [
@@ -145,4 +148,3 @@ export function emptyState(title, text) {
     el("p", { text })
   ]);
 }
-

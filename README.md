@@ -1,26 +1,24 @@
 # SM Course
 
-A static, GitHub Pages-ready learning hub for multiple courses, subcourses, lessons, notes, bookmarks, and local progress tracking.
+Statyczny, GitHub Pages-ready hub nauki pod wiele kursów. Aktualny etap zawiera nawigację, ścieżki nauki i placeholdery kursów; właściwy content kursów będzie dodawany później.
 
-## Structure
+## Struktura
 
 ```text
 .
 ├── index.html
 ├── courses/
-│   ├── social-media/
-│   │   ├── index.html
-│   │   └── subcourses/
-│   │       ├── strategy/index.html
-│   │       └── content-planning/index.html
-│   └── ai-productivity/
-│       ├── index.html
-│       └── subcourses/fundamentals/index.html
-├── data/courses.js
+│   ├── js-typescript/index.html
+│   ├── advanced-react-native/index.html
+│   └── ...
+├── data/courses/
+│   ├── index.js
+│   ├── js-typescript.js
+│   ├── advanced-react-native.js
+│   └── ...
 ├── scripts/
 │   ├── app-course.js
 │   ├── app-home.js
-│   ├── app-subcourse.js
 │   ├── components.js
 │   ├── router.js
 │   ├── storage.js
@@ -32,33 +30,61 @@ A static, GitHub Pages-ready learning hub for multiple courses, subcourses, less
     └── main.css
 ```
 
-## Add a Course
+## Dodawanie Kursu
 
-1. Add a new object in `data/courses.js`.
-2. Create `courses/<course-slug>/index.html` and set:
+1. Dodaj nowy plik `data/courses/<course-slug>.js`.
+2. Wyeksportuj z niego `course` zgodny z interfejsem:
+
+```js
+export const course = {
+  slug: "course-slug",
+  title: "Course title",
+  summary: "Short purpose statement.",
+  path: "Foundations",
+  priority: 10,
+  status: "Planowany",
+  accent: "#5eead4",
+  learningPath: "foundations",
+  contentStatus: "placeholder",
+  focusAreas: ["topic"],
+  plannedModules: [
+    {
+      title: "Module title",
+      scope: "What this module will cover.",
+      projectPlaceholder: "Future project placeholder."
+    }
+  ]
+};
+```
+
+3. Zaimportuj kurs w `data/courses/index.js` i dodaj go do tablicy `courses`.
+4. Utwórz `courses/<course-slug>/index.html` i ustaw:
 
 ```html
 <body data-page="course" data-course="course-slug">
 ```
 
-3. Create subcourse folders such as `courses/<course-slug>/subcourses/<subcourse-slug>/index.html` and set:
+Najprościej skopiować istniejący placeholder z `courses/js-typescript/index.html` i zmienić `title`, `description` oraz `data-course`.
 
-```html
-<body data-page="subcourse" data-course="course-slug" data-subcourse="subcourse-slug">
-```
+## Obecne Ścieżki
 
-Reuse the existing pages as templates.
+- Foundations
+- Professional RN Developer
+- Fullstack Awareness
+- Production Engineer
+- Bonus
+
+Content kursów nie powinien być teraz dokładany do HTML. Najpierw dodawaj metadane i plan modułów w osobnym pliku kursu.
 
 ## GitHub Pages
 
-This project does not need a build step.
+Projekt nie wymaga build stepu.
 
-1. Push the repository to GitHub.
-2. Open repository settings.
-3. Go to **Pages**.
-4. Set source to **Deploy from a branch**.
-5. Choose `main` and `/root`.
+1. Push do GitHuba.
+2. Repository settings.
+3. **Pages**.
+4. Source: **Deploy from a branch**.
+5. Branch: `main`, folder: `/root`.
 6. Save.
 
-All links are relative and work under a GitHub Pages project path such as `/SM-course/`.
-
+Wszystkie linki są względne i działają pod project path typu `/SM-course/`.

@@ -1,20 +1,12 @@
-import { courses } from "../data/courses.js";
+import { courses, coursesByLearningPath, filterCourses, learningPaths } from "../data/courses/index.js";
 import { favoriteButton, progressControl, searchInput, selectControl, statusSelect } from "./components.js";
 import { coursePath } from "./router.js";
-import { el, normalizeText, percent } from "./utils.js";
-import { getCompletedLessons } from "./storage.js";
+import { el, normalizeText } from "./utils.js";
 
 const app = document.querySelector("#app");
 let query = "";
-let statusFilter = "All";
-
-function courseProgress(course) {
-  const lessonCount = course.subcourses.reduce((total, subcourse) => total + subcourse.lessons.length, 0);
-  const completedCount = course.subcourses.reduce((total, subcourse) => {
-    return total + getCompletedLessons(`${course.slug}:${subcourse.slug}`).length;
-  }, 0);
-  return percent(completedCount, lessonCount);
-}
+let statusFilter = "Wszystkie";
+let pathFilter = "all";
 
 function renderShell() {
   app.replaceChildren(
@@ -24,28 +16,28 @@ function renderShell() {
           el("span", { className: "brand-mark", text: "SM" }),
           el("span", { text: "Study Hub" })
         ]),
-        el("span", { className: "version-pill", text: "Static GitHub Pages" })
+        el("span", { className: "version-pill", text: "GitHub Pages ready" })
       ])
     ]),
     el("main", { className: "page" }, [
       el("section", { className: "hero" }, [
         el("div", { className: "hero-copy" }, [
-          el("p", { className: "eyebrow", text: "Personal knowledge hub" }),
-          el("h1", { text: "Courses, subcourses, notes, and progress in one calm workspace." }),
+          el("p", { className: "eyebrow", text: "Multikursowy hub nauki" }),
+          el("h1", { text: "Mapa kursów pod uniwersalnego inżyniera mobile." }),
           el("p", {
             className: "lede",
-            text: "A modular study site built for many courses. Add content in one data file, keep pages light, and let the shared UI handle the layout."
+            text: "Aktualnie to szkielet nawigacji i placeholdery. Content kursów zostanie dodany w kolejnym kroku, bez przepisywania layoutu."
           })
         ]),
         el("aside", { className: "hero-panel" }, [
-          el("span", { className: "metric-label", text: "Courses" }),
+          el("span", { className: "metric-label", text: "Kursy" }),
           el("strong", { className: "metric-value", text: String(courses.length) }),
-          el("span", { className: "metric-label", text: "Subcourses" }),
-          el("strong", { className: "metric-value", text: String(courses.reduce((sum, course) => sum + course.subcourses.length, 0)) })
+          el("span", { className: "metric-label", text: "Ścieżki" }),
+          el("strong", { className: "metric-value", text: String(learningPaths.length) })
         ])
       ]),
       el("section", { className: "toolbar", id: "course-toolbar" }),
-      el("section", { className: "course-grid", id: "course-grid", "aria-live": "polite" })
+      el("section", { className: "path-stack", id: "course-paths", "aria-live": "polite" })
     ])
   );
 }
@@ -54,7 +46,7 @@ function renderToolbar() {
   const toolbar = document.querySelector("#course-toolbar");
   toolbar.replaceChildren(
     searchInput({
-      placeholder: "Search courses, tags, outcomes...",
+      placeholder: "Szukaj kursów, ścieżek, technologii...",
       onInput: (value) => {
         query = normalizeText(value);
         renderCourses();
@@ -62,11 +54,24 @@ function renderToolbar() {
     }),
     selectControl({
       id: "status-filter",
-      label: "Filter",
+      label: "Status",
       value: statusFilter,
-      options: ["All", "Active", "Draft", "Archived"],
+      options: ["Wszystkie", "Planowany", "Bonus", "Draft", "Gotowy"],
       onChange: (value) => {
         statusFilter = value;
+        renderCourses();
+      }
+    }),
+    selectControl({
+      id: "path-filter",
+      label: "Ścieżka",
+      value: pathFilter,
+      options: [
+        { value: "all", label: "Wszystkie" },
+        ...learningPaths.map((path) => ({ value: path.id, label: path.title }))
+      ],
+      onChange: (value) => {
+        pathFilter = value;
         renderCourses();
       }
     })
@@ -74,47 +79,43 @@ function renderToolbar() {
 }
 
 function renderCourses() {
-  const grid = document.querySelector("#course-grid");
-  const filtered = courses.filter((course) => {
-    const haystack = normalizeText([
-      course.title,
-      course.summary,
-      course.level,
-      course.status,
-      course.tags.join(" "),
-      course.outcomes.join(" ")
-    ].join(" "));
-    const matchesSearch = !query || haystack.includes(query);
-    const matchesStatus = statusFilter === "All" || course.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const stack = document.querySelector("#course-paths");
+  const filtered = filterCourses({ query, status: statusFilter, learningPath: pathFilter });
+  const groups = coursesByLearningPath(filtered).filter((path) => path.courses.length);
 
-  grid.replaceChildren(...filtered.map((course) => {
-    const progress = courseProgress(course);
-    return el("article", { className: "course-card", style: `--accent: ${course.accent}` }, [
-      el("div", { className: "card-topline" }, [
-        el("span", { className: "pill", text: course.status }),
-        favoriteButton(`course:${course.slug}`)
+  stack.replaceChildren(...groups.map((path) => {
+    return el("section", { className: "path-section" }, [
+      el("div", { className: "section-heading" }, [
+        el("div", {}, [
+          el("p", { className: "eyebrow", text: "Ścieżka nauki" }),
+          el("h2", { text: path.title }),
+          el("p", { text: path.summary })
+        ])
       ]),
-      el("h2", {}, el("a", { href: coursePath(course.slug), text: course.title })),
-      el("p", { text: course.summary }),
-      el("div", { className: "tag-row" }, course.tags.map((tag) => el("span", { className: "tag", text: tag }))),
-      el("div", { className: "meter", "aria-label": `${progress}% complete` }, [
-        el("span", { style: `width: ${progress}%` })
-      ]),
-      el("div", { className: "card-meta" }, [
-        el("span", { text: `${course.subcourses.length} subcourses` }),
-        el("span", { text: `${progress}% complete` })
-      ]),
-      statusSelect(`course:${course.slug}`),
-      progressControl(`course:${course.slug}`)
+      el("div", { className: "course-grid" }, path.courses.map((course) => {
+        return el("article", { className: "course-card", style: `--accent: ${course.accent}` }, [
+          el("div", { className: "card-topline" }, [
+            el("span", { className: "pill", text: course.status }),
+            favoriteButton(`course:${course.slug}`)
+          ]),
+          el("h3", {}, el("a", { href: coursePath(course.slug), text: course.title })),
+          el("p", { text: course.summary }),
+          el("div", { className: "tag-row" }, course.focusAreas.map((area) => el("span", { className: "tag", text: area }))),
+          el("div", { className: "card-meta" }, [
+            el("span", { text: course.path }),
+            el("span", { text: `${course.plannedModules.length} moduły w planie` })
+          ]),
+          statusSelect(`course:${course.slug}`),
+          progressControl(`course:${course.slug}`)
+        ]);
+      }))
     ]);
   }));
 
   if (!filtered.length) {
-    grid.replaceChildren(el("div", { className: "empty-state" }, [
-      el("h2", { text: "No courses found" }),
-      el("p", { text: "Try a broader search or change the status filter." })
+    stack.replaceChildren(el("div", { className: "empty-state" }, [
+      el("h2", { text: "Nie znaleziono kursów" }),
+      el("p", { text: "Zmień frazę wyszukiwania, status albo ścieżkę nauki." })
     ]));
   }
 }
@@ -122,4 +123,3 @@ function renderCourses() {
 renderShell();
 renderToolbar();
 renderCourses();
-

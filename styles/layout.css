@@ -141,6 +141,17 @@
   gap: 1rem;
 }
 
+.path-stack,
+.module-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.path-section {
+  display: grid;
+  gap: 0.25rem;
+}
+
 .split-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20rem;
@@ -149,7 +160,7 @@
 }
 
 .side-stack,
-.subcourse-list,
+.module-list,
 .lesson-list {
   display: grid;
   gap: 1rem;
@@ -199,4 +210,3 @@
     max-width: 11ch;
   }
 }
-
